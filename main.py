@@ -13,25 +13,39 @@ def index():
 @main.route('/profile')
 @login_required
 def profile():
-    return render_template('profile.html', name=current_user.name, email=current_user.email)
+    return render_template('profile.html')
 
 @main.route('/profile/edit', methods=['POST'])
 @login_required
 def profile_edit():
     email = request.form.get('email')
     name = request.form.get('name')
+    csrf_token = request.form.get('csrf_token')
     user = User.query.filter_by(id=current_user.id).first()
+
+    if not user.csrf_token == csrf_token:
+        return "<h2>Token Anti-CSRF inválido.</h2>"
+        
     user.name = name
     user.email = email
     db.session.commit()
 
-    return render_template('profile.html', name=current_user.name, email=current_user.email)
+    return redirect(url_for('main.profile'))
 
 @main.route('/profile/security', methods=['POST'])
 @login_required
 def profile_security_edit():
     new_password = request.form.get('new_password')
     confirm_new_password = request.form.get('confirm_new_password')
+    csrf_token = request.form.get('csrf_token')
+
+    try:
+        userForToken = User.query.filter_by(csrf_token=csrf_token).first()
+    except:
+        pass
+    
+    if not userForToken:
+        return "<h2>Token Anti-CSRF inválido.</h2>"
 
     user = User.query.filter_by(id=current_user.id).first()
 
@@ -41,7 +55,7 @@ def profile_security_edit():
     user.password = generate_password_hash(new_password, method='sha256')
     db.session.commit()
 
-    return render_template('profile.html', name=current_user.name, email=current_user.email, change_password_successfull=True)
+    return render_template('profile.html', change_password_successfull=True)
 
 @main.route('/delete-account', methods=['GET'])
 @login_required
@@ -62,25 +76,43 @@ def dashboard():
 
     total_tasks = len(all_tasks)
 
-    return render_template('dashboard.html', name=current_user.name, email=current_user.email, tasks=all_tasks, total_tasks=total_tasks, done_tasks=current_user.done_tasks)
+    return render_template('dashboard.html', tasks=all_tasks, total_tasks=total_tasks)
 
 @main.route('/add-task', methods=['POST'])
 @login_required
 def add_task_post():
     # create new task with the form data.
     title = request.form.get('title')
+    csrf_token = request.form.get('csrf_token')
     new_task = Task(title=title, user_id=current_user.id)
 
-    # add the new task to the database
-    db.session.add(new_task)
-    db.session.commit()
+    user = User.query.filter_by(id=current_user.id).first()
+    
+    if isinstance(csrf_token, str) == False:
+        # add the new task to the database
+        db.session.add(new_task)
+        db.session.commit()
+    elif user.csrf_token != csrf_token:
+        return "<h2>Token Anti-CSRF inválido.</h2>"
+    else:
+        # add the new task to the database
+        db.session.add(new_task)
+        db.session.commit()
 
     return redirect(url_for('main.dashboard'))
 
-@main.route('/delete-task', methods=['GET'])
+@main.route('/delete-task', methods=['GET', 'POST'])
 @login_required
 def delete_task():
-    task_id = request.args.get('id', '')
+    if request.method == 'GET':
+        task_id = request.args.get('id', '')
+        csrf_token = request.args.get('csrf_token', '')
+        user = User.query.filter_by(id=current_user.id).first()
+        if user.csrf_token != csrf_token:
+            return "<h2>Token Anti-CSRF inválido.</h2>"
+    elif request.method == 'POST':
+        task_id = request.form.get('id')
+    
     task = Task.query.filter_by(id=task_id).first()
     if task:
         db.session.delete(task)

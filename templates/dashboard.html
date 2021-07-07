@@ -52,7 +52,7 @@
                     <div class="hero-body">
                         <div class="container">
                             <h1 class="title">
-                                Olá, {{ name }}.
+                                Olá, {{ current_user.name }}.
                             </h1>
                             <h2 class="subtitle">
                                 Gerencie suas tarefas facilmente neste painel.
@@ -70,7 +70,7 @@
                         </div>
                         <div class="tile is-parent">
                             <article class="tile is-child box">
-                                <p class="title">{{ done_tasks }}</p>
+                                <p class="title">{{ current_user.done_tasks }}</p>
                                 <p class="subtitle">Concluídas</p>
                             </article>
                         </div>
@@ -94,6 +94,7 @@
                                 <div class="content">
                                     <div class="control has-icons-left has-icons-right">
                                         <form method="POST" action="/add-task" class="block">
+                                            <input type="hidden" name="csrf_token" value={{ current_user.csrf_token }}>
                                             <input class="input is-medium block" name="title" type="text" placeholder="">
                                         <span class="icon is-medium is-left">
                                             <i class="fa fa-tasks"></i>
@@ -127,7 +128,7 @@
                                                 <td width="5%"><i class="fa fa-thumb-tack"></i></td>
                                                 <td>{{ task.title }}</td>
                                                 <td class="level-right">
-                                                    <a class="button is-small is-success" href={{ url_for('main.delete_task', id = task.id) }}>Concluir</a>
+                                                    <a class="button is-small is-success" href={{ url_for('main.delete_task', id = task.id, csrf_token=current_user.csrf_token) }}>Concluir</a>
                                                 </td>
                                             </tr>
                                             {% endfor %}
@@ -145,7 +146,6 @@
             </div>
         </div>
     </div>
-    <script async type="text/javascript" src="../js/bulma.js"></script>
 </body>
 
 </html>

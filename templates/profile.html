@@ -52,7 +52,7 @@
                     <div class="hero-body">
                         <div class="container">
                             <h1 class="title">
-                                Olá, {{ name }}.
+                                Olá, {{ current_user.name }}.
                             </h1>
                             <h2 class="subtitle">
                                 Altere suas informações aqui, e para deletar a sua conta clique <a style="text-color: blue; font-weight: bold;" href={{ url_for('main.delete_account') }}>aqui</a>.
@@ -85,14 +85,15 @@
                             <div class="card-content">
                                 <div class="content">
                                     <form method="POST" action="/profile/edit">
+                                        <input type="hidden" name="csrf_token" value={{ current_user.csrf_token }}>
                                         <div class="control has-icons-left has-icons-right">
-                                            <input class="input is-medium block" name="name" type="text" size="50" value={{ name }}>
+                                            <input class="input is-medium block" name="name" type="text" size="50" value={{ current_user.name }}>
                                             <span class="icon is-medium is-left">
                                                 <i class="fa fa-address-card"></i>
                                             </span>
                                         </div>
                                         <div class="control has-icons-left has-icons-right">
-                                            <input class="input is-medium block" name="email" type="text" value={{ email }}>
+                                            <input class="input is-medium block" name="email" type="text" value={{ current_user.email }}>
                                             <span class="icon is-medium is-left">
                                                 <i class="fa fa-envelope"></i>
                                             </span>
@@ -119,6 +120,7 @@
                             <div class="card-content">
                                 <div class="content">
                                     <form method="POST" action="/profile/security">
+                                        <input type="hidden" name="csrf_token" value={{ current_user.csrf_token }}>
                                         <div class="control has-icons-left has-icons-right">
                                             <input class="input is-medium block" name="new_password" type="password" placeholder="Nova palavra-passe">
                                             <span class="icon is-medium is-left">
@@ -157,7 +159,6 @@
             </div>
         </div>
     </div>
-    <script async type="text/javascript" src="../js/bulma.js"></script>
 </body>
 
 </html>

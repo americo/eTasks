@@ -5,7 +5,13 @@ from .models import Task
 from flask_login import login_user
 from . import db
 
+import binascii
+import os
+
 auth = Blueprint('auth', __name__)
+
+def generate_key():
+    return binascii.hexlify(os.urandom(20)).decode()
 
 @auth.route('/login')
 def login():
@@ -22,15 +28,15 @@ def login_post():
     # check if user actually exists
     # take the user supplied password, hash it, and compare it to the hashed password in database
     if not user or not check_password_hash(user.password, password):
-        #flash('Please check your login details and try again.')
-        return render_template('login.html', login_failed=True)
-        #return redirect(url_for('auth.login')) # if user doesn't exist or password is wrong, reload the page         
+        return render_template('login.html', login_failed=True)    
      
     login_user(user, remember=remember)
+    csrf_token = generate_key()
+    user.csrf_token = csrf_token
+    db.session.commit()
 
     return redirect(url_for('main.dashboard'))
-
-
+    
 @auth.route('/register')
 def register():
     return render_template('register.html')
