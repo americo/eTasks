@@ -25,28 +25,28 @@
             <div class="column right has-text-centered">
               <h1 class="title is-4">Registrar</h1>
               <p class="description">Crie sua conta apartir daqui.</p>
-              <form>
+              <form method="POST" action="/register">
                 <div class="field">
                   <div class="control">
-                    <input class="input is-medium" type="text" placeholder="Nome">
+                    <input class="input is-medium" name="name" type="text" placeholder="Nome">
                   </div>
                 </div>
 
                 <div class="field">
                   <div class="control">
-                    <input class="input is-medium" type="email" placeholder="Email">
+                    <input class="input is-medium" name="email" type="email" placeholder="Email">
                   </div>
                 </div>
 
                 <div class="field">
                     <div class="control">
-                      <input class="input is-medium" type="password" placeholder="Palavra-passe">
+                      <input class="input is-medium" name="password" type="password" placeholder="Palavra-passe">
                     </div>
                   </div>
 
                 <button class="button is-block is-success is-fullwidth is-medium">Criar</button>
                 <br />
-                <small><em>Esperamos por você no outro lado.<br/>Se já possui uma conta clique em <a href="">Entrar</a></em></small>
+                <small><em>Esperamos por você no outro lado.<br/>Se já possui uma conta clique em <a href="/login">Entrar</a></em></small>
               </form>
             </div>
           </div>
@@ -75,7 +75,7 @@
             </div>
             <div class="level-right">
               <small class="level-item" style="color: var(--textLight)">
-                &copy; eTasks. Todos direitos reservados. Mantido por  <a href="https://thebughunter.io">The Bug Hunter</a>
+                &copy; eTasks. Todos direitos reservados. Desenvolvido por <a href="https://americojunior.com"> Américo Júnior </a> e Mantido por <a href="https://thebughunter.io">The Bug Hunter</a>.
               </small>
             </div>
           </nav>

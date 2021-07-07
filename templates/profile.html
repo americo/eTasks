@@ -19,7 +19,7 @@
     <nav class="navbar is-white">
         <div class="container">
             <div class="navbar-brand">
-                <a class="navbar-item brand-text" href="../dashboard.html">
+                <a class="navbar-item brand-text" href="/dashboard">
           <b>eTasks</b>
         </a>
                 <div class="navbar-burger burger" data-target="navMenu">
@@ -30,13 +30,13 @@
             </div>
             <div id="navMenu" class="navbar-menu">
                 <div class="navbar-start">
-                    <a class="navbar-item" href="dashboard.html">
+                    <a class="navbar-item" href="/dashboard">
             Home
           </a>
-                    <a class="navbar-item" href="profile.html">
+                    <a class="navbar-item" href="/profile">
             Perfil
           </a>
-                    <a class="navbar-item" href="logout.html">
+                    <a class="navbar-item" href="/logout">
             Sair
           </a>
                 </div>
@@ -52,10 +52,10 @@
                     <div class="hero-body">
                         <div class="container">
                             <h1 class="title">
-                                Olá, Admin.
+                                Olá, {{ name }}.
                             </h1>
                             <h2 class="subtitle">
-                                Altere suas informações aqui.
+                                Altere suas informações aqui, e para deletar a sua conta clique <a style="text-color: blue; font-weight: bold;" href={{ url_for('main.delete_account') }}>aqui</a>.
                             </h2>
                         </div>
                     </div>
@@ -84,25 +84,21 @@
                             </header>
                             <div class="card-content">
                                 <div class="content">
-                                    <div class="control has-icons-left has-icons-right">
-                                        <input class="input is-medium block" type="text" placeholder="Seu nome">
-                                        <span class="icon is-medium is-left">
-                                            <i class="fa fa-address-card"></i>
-                                        </span>
-                                    </div>
-                                    <div class="control has-icons-left has-icons-right">
-                                        <input class="input is-medium block" type="text" placeholder="Seu sobrenome">
-                                        <span class="icon is-medium is-left">
-                                            <i class="fa fa-address-card-o"></i>
-                                        </span>
-                                    </div>
-                                    <div class="control has-icons-left has-icons-right">
-                                        <input class="input is-medium block" type="text" placeholder="Seu email">
-                                        <span class="icon is-medium is-left">
-                                            <i class="fa fa-envelope"></i>
-                                        </span>
-                                    </div>
-                                    <button class="button is-success is-medium is-fullwidth">Alterar</button>
+                                    <form method="POST" action="/profile/edit">
+                                        <div class="control has-icons-left has-icons-right">
+                                            <input class="input is-medium block" name="name" type="text" size="50" value={{ name }}>
+                                            <span class="icon is-medium is-left">
+                                                <i class="fa fa-address-card"></i>
+                                            </span>
+                                        </div>
+                                        <div class="control has-icons-left has-icons-right">
+                                            <input class="input is-medium block" name="email" type="text" value={{ email }}>
+                                            <span class="icon is-medium is-left">
+                                                <i class="fa fa-envelope"></i>
+                                            </span>
+                                        </div>
+                                        <input type="submit" class="button is-success is-medium is-fullwidth" value="Alterar">
+                                    </form>
                                 </div>
                             </div>
                         </div>
@@ -122,28 +118,39 @@
                             </header>
                             <div class="card-content">
                                 <div class="content">
-                                    <div class="control has-icons-left has-icons-right">
-                                        <input class="input is-medium block" type="text" placeholder="Actual palavra-passe">
-                                        <span class="icon is-medium is-left">
-                                            <i class="fa fa-shield"></i>
-                                        </span>
-                                    </div>
-                                    <div class="control has-icons-left has-icons-right">
-                                        <input class="input is-medium block" type="text" placeholder="Nova palavra-passe">
-                                        <span class="icon is-medium is-left">
-                                            <i class="fa fa-key"></i>
-                                        </span>
-                                    </div>
-                                    <div class="control has-icons-left has-icons-right">
-                                        <input class="input is-medium block" type="text" placeholder="Confirmar palavra-passe">
-                                        <span class="icon is-medium is-left">
-                                            <i class="fa fa-key"></i>
-                                        </span>
-                                    </div>
-                                    <button class="button is-success is-medium is-fullwidth">Alterar</button>
+                                    <form method="POST" action="/profile/security">
+                                        <div class="control has-icons-left has-icons-right">
+                                            <input class="input is-medium block" name="new_password" type="password" placeholder="Nova palavra-passe">
+                                            <span class="icon is-medium is-left">
+                                                <i class="fa fa-key"></i>
+                                            </span>
+                                        </div>
+                                        <div class="control has-icons-left has-icons-right">
+                                            <input class="input is-medium block" name="confirm_new_password" type="password" placeholder="Confirmar palavra-passe">
+                                            <span class="icon is-medium is-left">
+                                                <i class="fa fa-key"></i>
+                                            </span>
+                                        </div>
+                                        <input type="submit" class="button is-success is-medium is-fullwidth" value="Alterar">
+                                    </form>
                                 </div>
                             </div>
                         </div>
+                        {% if change_password_failed %}
+                            <br/>
+                            <div class="notification is-danger block" id="notification">
+                            <button class="delete" onclick="hide('notification')"></button>
+                            As palavras-passe não conscidem!
+                            </div>
+                        {% endif %}
+
+                        {% if change_password_successfull %}
+                            <br/>
+                            <div class="notification is-success block" id="notification">
+                            <button class="delete" onclick="hide('notification')"></button>
+                            As palavra-passe foi alterada!
+                            </div>
+                        {% endif %}
                     
                     </div>
                 </div>
