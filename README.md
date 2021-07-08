@@ -47,6 +47,7 @@ Uma plataforma web que gerencia tarefas, e ela foi criada com vulnerabilidades p
 * Crie virtualvenv com o comando `python3 -m venv venv`
 * Ative o virtualvenv com o comando `. venv/bin/activate`
 * Instale os requisitos com o comando `pip install -r requirements.txt`
+* Configure a variável ambiente com o comando `export FLASK_APP=app.py` no linux
 * Inicie o servidor com o comando `flask run` 
 * A aplicação estara disponível na porta: **5000**
 
