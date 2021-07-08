@@ -1,125 +1,38 @@
-from flask import Blueprint, render_template, request, url_for, redirect, flash
-from flask_login import login_required, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
-from .models import Task, User
-from . import db
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager
 
-main = Blueprint('main', __name__)
+# init SQLAlchemy so we can use it later in our models
+db = SQLAlchemy()
 
-@main.route('/')
-def index():
-    return redirect(url_for('auth.login'))
+def create_app():
+    app = Flask(__name__)
 
-@main.route('/profile')
-@login_required
-def profile():
-    return render_template('profile.html')
+    app.config['SECRET_KEY'] = '9OLWxND4o83j4K4iuopO'
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = 'false'
 
-@main.route('/profile/edit', methods=['POST'])
-@login_required
-def profile_edit():
-    email = request.form.get('email')
-    name = request.form.get('name')
-    csrf_token = request.form.get('csrf_token')
-    user = User.query.filter_by(id=current_user.id).first()
+    db.init_app(app)
 
-    if not user.csrf_token == csrf_token:
-        return "<h2>Token Anti-CSRF inválido.</h2>"
-        
-    user.name = name
-    user.email = email
-    db.session.commit()
+    login_manager = LoginManager()
+    login_manager.login_view = 'auth.login'
+    login_manager.init_app(app)
 
-    return redirect(url_for('main.profile'))
+    from .models import User, Task
 
-@main.route('/profile/security', methods=['POST'])
-@login_required
-def profile_security_edit():
-    new_password = request.form.get('new_password')
-    confirm_new_password = request.form.get('confirm_new_password')
-    csrf_token = request.form.get('csrf_token')
+    @login_manager.user_loader
+    def load_user(user_id):
+        # since the user_id is just the primary key of our user table, use it in the query for the user
+        return User.query.get(int(user_id))
 
-    try:
-        userForToken = User.query.filter_by(csrf_token=csrf_token).first()
-    except:
-        pass
-    
-    if not userForToken:
-        return "<h2>Token Anti-CSRF inválido.</h2>"
+    # blueprint for auth routes in our app
+    from .auth import auth as auth_blueprint
+    app.register_blueprint(auth_blueprint)
 
-    user = User.query.filter_by(id=current_user.id).first()
+    # blueprint for non-auth parts of app
+    from .main import main as main_blueprint
+    app.register_blueprint(main_blueprint)
 
-    if new_password != confirm_new_password:
-        return render_template('profile.html', change_password_failed=True)
-    
-    user.password = generate_password_hash(new_password, method='sha256')
-    db.session.commit()
+    return app
 
-    return render_template('profile.html', change_password_successfull=True)
-
-@main.route('/delete-account', methods=['GET'])
-@login_required
-def delete_account():
-    user = User.query.filter_by(id=current_user.id).first()
-    db.session.delete(user)
-    db.session.commit()
-
-    return redirect(url_for('auth.register'))
-
-@main.route('/dashboard')
-@login_required
-def dashboard():
-    tasks = Task.query.filter_by(user_id=current_user.id)
-    all_tasks = []
-    for task in tasks:
-        all_tasks.append(task)
-
-    total_tasks = len(all_tasks)
-
-    return render_template('dashboard.html', tasks=all_tasks, total_tasks=total_tasks)
-
-@main.route('/add-task', methods=['POST'])
-@login_required
-def add_task_post():
-    # create new task with the form data.
-    title = request.form.get('title')
-    csrf_token = request.form.get('csrf_token')
-    new_task = Task(title=title, user_id=current_user.id)
-
-    user = User.query.filter_by(id=current_user.id).first()
-    
-    if isinstance(csrf_token, str) == False:
-        # add the new task to the database
-        db.session.add(new_task)
-        db.session.commit()
-    elif user.csrf_token != csrf_token:
-        return "<h2>Token Anti-CSRF inválido.</h2>"
-    else:
-        # add the new task to the database
-        db.session.add(new_task)
-        db.session.commit()
-
-    return redirect(url_for('main.dashboard'))
-
-@main.route('/delete-task', methods=['GET', 'POST'])
-@login_required
-def delete_task():
-    if request.method == 'GET':
-        task_id = request.args.get('id', '')
-        csrf_token = request.args.get('csrf_token', '')
-        user = User.query.filter_by(id=current_user.id).first()
-        if user.csrf_token != csrf_token:
-            return "<h2>Token Anti-CSRF inválido.</h2>"
-    elif request.method == 'POST':
-        task_id = request.form.get('id')
-    
-    task = Task.query.filter_by(id=task_id).first()
-    if task:
-        db.session.delete(task)
-        db.session.commit()
-
-    user = User.query.filter_by(id=current_user.id).first()
-    user.done_tasks = user.done_tasks + 1
-    db.session.commit()
-
-    return redirect(url_for('main.dashboard'))
+db.create_all(app=create_app())
