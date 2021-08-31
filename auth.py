@@ -1,9 +1,8 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from werkzeug.security import generate_password_hash, check_password_hash
-from .models import User
-from .models import Task
+from models import User, Task
 from flask_login import login_user
-from . import db
+from app import db
 
 import binascii
 import os
@@ -53,7 +52,7 @@ def register_post():
         return redirect(url_for('auth.register'))
 
     # create new user with the form data. Hash the password so plaintext version isn't saved.
-    new_user = User(email=email, name=name, password=generate_password_hash(password, method='sha256'), done_tasks=0)
+    new_user = User(email=email, name=name, password=generate_password_hash(password, method='sha256'), done_tasks=0, avatar_name='profile.png')
 
     # add the new user to the database
     db.session.add(new_user)

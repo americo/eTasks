@@ -1,10 +1,24 @@
-from flask import Blueprint, render_template, request, url_for, redirect, flash
+import os
+from flask import Blueprint, render_template, request, url_for, redirect, flash, Flask, abort, send_from_directory
 from flask_login import login_required, current_user
+from xml.dom import minidom
+from lxml import etree
 from werkzeug.security import generate_password_hash, check_password_hash
-from .models import Task, User
-from . import db
+from werkzeug.utils import secure_filename
+from models import Task, User
+from app import db
 
 main = Blueprint('main', __name__)
+
+# Admin panel credentials
+USERNAME = 'admin'
+PASSWORD = 'admin'
+
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'svg'}
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @main.route('/')
 def index():
@@ -61,6 +75,10 @@ def profile_security_edit():
 @login_required
 def delete_account():
     user = User.query.filter_by(id=current_user.id).first()
+
+    if user.avatar_name != 'profile.png':
+        os.system(f"rm ./uploads/profile/{user.avatar_name}")
+
     db.session.delete(user)
     db.session.commit()
 
@@ -123,3 +141,159 @@ def delete_task():
     db.session.commit()
 
     return redirect(url_for('main.dashboard'))
+
+@main.route('/upload', methods=['POST'])
+@login_required
+def upload_file():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # if user does not select file, browser also
+        # submit an empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join('./uploads/profile', filename))
+
+            user = User.query.filter_by(id=current_user.id).first()
+            
+            if user.avatar_name != 'profile.png':
+                os.system(f"rm ./uploads/profile/{user.avatar_name}")
+
+            user.avatar_name = filename
+            db.session.commit()
+
+            return redirect(url_for('main.profile'))
+
+@main.route('/uploads/profile/<filename>')
+def uploaded_file(filename):
+    try:
+        file = open(f"./uploads/profile/{filename}")
+        file_data = file.read()
+        xml = file_data
+        parser = etree.XMLParser(no_network=False)
+        doc = etree.tostring(etree.fromstring(str(xml), parser))
+        return doc
+    except Exception as e:
+        return send_from_directory('./uploads/profile', filename), 200, {'Content-Type': 'image/jpeg; charset=utf-8'}
+
+@main.route('/admin')
+def admin():
+    return render_template("admin.html")
+
+@main.route("/doLogin", methods=['POST', 'GET'])
+def doLogin():
+    result = None
+    parsed_xml = None
+    if request.method == 'POST':
+        try:
+            xml = request.data.decode("utf-8") 
+            parser = etree.XMLParser(no_network=False)
+            doc = etree.tostring(etree.fromstring(str(xml), parser))
+
+            DOMTree = minidom.parseString(doc)
+            username = DOMTree.getElementsByTagName("username")
+            username = username[0].childNodes[0].nodeValue
+            password = DOMTree.getElementsByTagName("password")
+            password = password[0].childNodes[0].nodeValue
+
+            if username == USERNAME and password == PASSWORD:
+                result = "<result><code>%d</code><msg>%s</msg></result>" % (1,username)
+            else:
+                result = "<result><code>%d</code><msg>%s</msg></result>" % (0,username)
+        except Exception as e:
+            result = "<result><code>%d</code><msg>%s</msg></result>" % (3,username)
+	
+    return result,{'Content-Type': 'text/xml;charset=UTF-8'}
+
+@main.route('/admin/forgotPassword')
+def forgotPassword():
+    return render_template("forgotPassword.html")
+
+@main.route("/admin/doForgotPassword", methods=['POST', 'GET'])
+def doForgotPassword():
+    result = None
+    parsed_xml = None
+    if request.method == 'POST':
+        try:
+            xml = request.data.decode("utf-8") 
+            parser = etree.XMLParser(no_network=False)
+            doc = etree.tostring(etree.fromstring(str(xml), parser))
+
+            DOMTree = minidom.parseString(doc)
+            email = DOMTree.getElementsByTagName("email")
+            email = email[0].childNodes[0].nodeValue
+
+            if email:
+                result = "<result><code>%d</code><msg>Você receberá um link para redefinir a palavra-passe caso esse email exista.</msg></result>" % 1
+        except Exception as e:
+            result = "<result><code>%d</code><msg>%s</msg></result>" % (3,e)
+	
+    return result,{'Content-Type': 'text/xml;charset=UTF-8'}
+
+@main.route('/admin/register')
+def registerAdmin():
+    return render_template("registerAdmin.html")
+
+@main.route("/admin/doRegister", methods=['POST', 'GET'])
+def doRegisterAdmin():
+    result = None
+    parsed_xml = None
+    if request.method == 'POST':
+        try:
+            registrationKey = request.form.get("registration-key")
+            email = request.form.get("email")
+            username = request.form.get("username")
+            password = request.form.get("password")
+
+            if email and username and password:
+                if registrationKey == "pOiEnZ1zpdaXhyKqWUNEoX6ENQj5duEE":
+                    result = "<h3>Administrador registrado com sucesso pelo email %s.</h3>" % email
+                else:
+                    result = "<h3>Chave de registro inválida.</h3>"
+
+                return result,{'Content-Type': 'text/html;charset=UTF-8'}
+        except:
+            pass
+
+        try:
+            xml = request.data.decode("utf-8") 
+            parser = etree.XMLParser(no_network=False)
+            doc = etree.tostring(etree.fromstring(str(xml), parser))
+
+            DOMTree = minidom.parseString(doc)
+            registrationKey = DOMTree.getElementsByTagName("registration-key")
+            registrationKey = registrationKey[0].childNodes[0].nodeValue
+            email = DOMTree.getElementsByTagName("email")
+            email = email[0].childNodes[0].nodeValue
+            username = DOMTree.getElementsByTagName("username")
+            username = username[0].childNodes[0].nodeValue
+            password = DOMTree.getElementsByTagName("password")
+            password = password[0].childNodes[0].nodeValue
+
+            if email and username and password:
+                if registrationKey == "pOiEnZ1zpdaXhyKqWUNEoX6ENQj5duEE":
+                    result = "<result><code>%d</code><msg>Administrador registrado com sucesso pelo email %s </msg></result>" % (1, email)
+                else:
+                    result = "<result><code>%d</code><msg>Chave de registro inválida</msg></result>" % 3
+
+                return result,{'Content-Type': 'text/xml;charset=UTF-8'}
+        except Exception as e:
+            result = "<result><code>%d</code><msg>%s</msg></result>" % (1, e)
+            return result,{'Content-Type': 'text/xml;charset=UTF-8'}
+	
+
+@main.route('/admin/s3cr3t')
+def secret():
+    trusted_proxies = ('127.0.0.1', 'localhost')
+    remote = request.remote_addr
+
+    if remote != '127.0.0.1':
+        abort(403)  # Forbidden
+
+    return "REGISTRATION KEY: pOiEnZ1zpdaXhyKqWUNEoX6ENQj5duEE"

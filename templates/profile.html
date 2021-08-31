@@ -11,6 +11,16 @@
     <!-- Bulma Version 0.9.0-->
     <link rel="stylesheet" href="https://unpkg.com/bulma@0.9.0/css/bulma.min.css" />
     <link rel="stylesheet" type="text/css" href="../static/css/main.css">
+
+    <style>
+        .circle {
+            margin: 20px;
+            border-radius: 50%;
+            -moz-border-radius: 50%;
+            -webkit-border-radius: 50%;
+            -o-border-radius: 50%;
+        }
+    </style>
 </head>
 
 <body>
@@ -69,7 +79,36 @@
                     </div>
                 </section>
                 <div class="columns">
-
+                    <div class="column is-3">
+                        <div class="card">
+                            <img src="../uploads/profile/{{ current_user.avatar_name }}" width="275px" height="275px" class="circle"/>
+                        </div>
+                    </div>
+                    <div class="column is-9">
+                        <div class="card">
+                            <header class="card-header">
+                                <p class="card-header-title">
+                                    Alterar fotografia
+                                </p>
+                                <a href="#" class="card-header-icon" aria-label="more options">
+                                <span class="icon">
+                                    <i class="fa fa-angle-down" aria-hidden="true"></i>
+                                </span>
+                                </a>
+                            </header>
+                            <div class="card-content">
+                                <div class="content">
+                                    <form action="/upload" method=post enctype=multipart/form-data>
+                                        <input type=file name=file>
+                                        <input type="hidden" name="csrf_token" value={{ current_user.csrf_token }}><br/><br/><br/><br/><br/><br/>
+                                        <input type="submit" class="button is-success is-medium is-fullwidth" value="Carregar">
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="columns">
                     <div class="column is-6">
                         <div class="card">
                             <header class="card-header">
