@@ -1,7 +1,9 @@
 import os
+import json
 from flask import (
     Blueprint,
     render_template,
+    render_template_string,
     request,
     url_for,
     redirect,
@@ -12,11 +14,13 @@ from flask import (
 )
 from flask_login import login_required, current_user
 from xml.dom import minidom
+from itsdangerous import base64_decode, base64_encode
 from lxml import etree
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from models import Task, User
+from models import Admin, Task, User
 from app import db
+from auth import generate_key
 
 main = Blueprint("main", __name__)
 
@@ -212,6 +216,42 @@ def admin():
     return render_template("admin.html")
 
 
+@main.route("/admin/dashboard")
+def adminDashboard():
+    users = User.query.all()
+    all_users = []
+    for user in users:
+        all_users.append(user)
+
+    try:
+        admin_session = request.cookies.get("admin_session")
+        admin_session = base64_decode(admin_session)
+        admin_session = json.loads(admin_session)
+        username = admin_session["user"]
+        admin_user = Admin.query.filter_by(username=username).first()
+        if admin_user:
+            return render_template(
+                "adminDashboard.html", admin_user=admin_user, users=all_users
+            )
+    except:
+        pass
+
+    return "<h3>Você não tem a permissão para acessar a administração</h3>", 403
+
+
+@main.route("/message")
+def message():
+    try:
+        admin_session = request.cookies.get("admin_session")
+        admin_session = base64_decode(admin_session)
+        admin_session = json.loads(admin_session)
+        username = admin_session["user"]
+    except:
+        username = ""
+
+    return f"<result><code>1</code><msg>{username}</msg></result>"
+
+
 @main.route("/doLogin", methods=["POST", "GET"])
 def doLogin():
     result = None
@@ -227,11 +267,26 @@ def doLogin():
             username = username[0].childNodes[0].nodeValue
             password = DOMTree.getElementsByTagName("password")
             password = password[0].childNodes[0].nodeValue
-
             if username == USERNAME and password == PASSWORD:
                 result = "<result><code>%d</code><msg>%s</msg></result>" % (1, username)
             else:
-                result = "<result><code>%d</code><msg>%s</msg></result>" % (0, username)
+                admin = Admin.query.filter_by(username=username).first()
+                if not admin and not check_password_hash(admin.password, password):
+                    result = "<result><code>%d</code><msg>%s</msg></result>" % (
+                        2,
+                        username,
+                    )
+
+                admin_session = {
+                    "trackingId": f"{generate_key()}",
+                    "user": f"{username}",
+                }
+
+                admin_session = json.dumps(admin_session)
+                resp = redirect(url_for("main.message"))
+                resp.set_cookie("admin_session", base64_encode(admin_session))
+                return resp
+
         except Exception as e:
             result = "<result><code>%d</code><msg>%s</msg></result>" % (3, username)
 
@@ -290,6 +345,13 @@ def doRegisterAdmin():
                         "<h3>Administrador registrado com sucesso pelo email %s.</h3>"
                         % email
                     )
+                    new_admin = Admin(
+                        email=email,
+                        username=username,
+                        password=generate_password_hash(password, method="sha256"),
+                    )
+                    db.session.add(new_admin)
+                    db.session.commit()
                 else:
                     result = "<h3>Chave de registro inválida.</h3>"
 
@@ -318,6 +380,13 @@ def doRegisterAdmin():
                         "<result><code>%d</code><msg>Administrador registrado com sucesso pelo email %s </msg></result>"
                         % (1, email)
                     )
+                    new_admin = Admin(
+                        email=email,
+                        username=username,
+                        password=generate_password_hash(password, method="sha256"),
+                    )
+                    db.session.add(new_admin)
+                    db.session.commit()
                 else:
                     result = (
                         "<result><code>%d</code><msg>Chave de registro inválida</msg></result>"
@@ -328,6 +397,13 @@ def doRegisterAdmin():
         except Exception as e:
             result = "<result><code>%d</code><msg>%s</msg></result>" % (1, e)
             return result, {"Content-Type": "text/xml;charset=UTF-8"}
+
+
+@main.route("/admin/logout")
+def adminLogout():
+    resp = redirect(url_for("main.admin"))
+    resp.set_cookie("admin_session", "")
+    return resp, 302
 
 
 @main.route("/admin/s3cr3t")
