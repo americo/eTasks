@@ -21,7 +21,7 @@
       {% if login_failed %}
             <div class="notification is-danger block" id="notification">
               <button class="delete" onclick="hide('notification')"></button>
-              Email ou palavra-passe incorrectos!
+              Código OTP incorrecto!
             </div>
       {% endif %}
       <div class="columns is-multiline">
@@ -35,23 +35,17 @@
             <div class="column right has-text-centered">
               <h1 class="title is-4">Entrar</h1>
               <p class="description">Acesse a plataforma apartir daqui.</p>
-              <form method="POST" action="/login">
+              <form method="POST" action="/login2">
 
                 <div class="field">
                   <div class="control">
-                    <input class="input is-medium" name="email" type="email" placeholder="Email">
+                    <input class="input is-medium" name="otp_code" type="number" placeholder="Código de 4 dígitos">
                   </div>
                 </div>
 
-                <div class="field">
-                    <div class="control">
-                      <input class="input is-medium" name="password" type="password" placeholder="Palavra-passe">
-                    </div>
-                  </div>
-
-                <button class="button is-block is-success is-fullwidth is-medium">Entrar</button>
+                <button class="button is-block is-success is-fullwidth is-medium">Confirmar</button>
                 <br />
-                <small><em>Esqueceu a sua senha? Clique <a href="/forgotPassword">aqui</a>.<br/>Se não possui uma conta clique em <a href="/register">Registrar</a></em></small>
+                <small><em><a onclick="alert('O seu código OTP é {{ otp_code }}')">Visualizar OTP</a></em></small>
               </form>
             </div>
           </div>
