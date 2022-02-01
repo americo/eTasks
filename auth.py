@@ -82,9 +82,11 @@ def forgotPassword():
 @auth.route("/forgotPassword", methods=["POST"])
 def forgotPassword_post():
     email = request.form.get("email")
+
     user = User.query.filter_by(email=email).first()
+
     if not user:
-        return render_template("forgot-password", reset_failed=True)
+        return render_template("forgot-password.html", reset_failed=True)
 
     user.reset_token = generate_key()
     db.session.commit()
