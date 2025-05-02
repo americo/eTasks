@@ -11,6 +11,7 @@ from flask import (
     Flask,
     abort,
     send_from_directory,
+    send_file,
 )
 from flask_login import login_required, current_user
 from xml.dom import minidom
@@ -52,7 +53,9 @@ def profile_edit():
     email = request.form.get("email")
     name = request.form.get("name")
     csrf_token = request.form.get("csrf_token")
-    user = User.query.filter_by(id=current_user.id).first()
+    user_id = request.form.get("user_id")
+    userCSRF = User.query.filter_by(id=current_user.id).first()
+    user = User.query.filter_by(id=user_id).first()
 
     if not user.csrf_token == csrf_token:
         return "<h2>Token Anti-CSRF inválido.</h2>"
@@ -84,7 +87,7 @@ def profile_security_edit():
     if new_password != confirm_new_password:
         return render_template("profile.html", change_password_failed=True)
 
-    user.password = generate_password_hash(new_password, method="sha256")
+    user.password = generate_password_hash(new_password, method="scrypt")
     db.session.commit()
 
     return render_template("profile.html", change_password_successfull=True)
@@ -117,13 +120,32 @@ def dashboard():
     return render_template("dashboard.html", tasks=all_tasks, total_tasks=total_tasks)
 
 
+@main.route("/public-tasks")
+def public_tasks():
+    tasks = Task.query.filter_by(is_public=True)
+    # Get task creator name
+    for task in tasks:
+        creator = User.query.filter_by(id=task.user_id).first()
+        task.creator_name = creator.name if creator else "Usuário Desconhecido"
+        task.creator_avatar = creator.avatar_name if creator else None
+    return render_template("publicTasks.html", tasks=tasks)
+
+
 @main.route("/add-task", methods=["POST"])
 @login_required
 def add_task_post():
     # create new task with the form data.
     title = request.form.get("title")
+    is_public = request.form.get("is_public")
     csrf_token = request.form.get("csrf_token")
-    new_task = Task(title=title, user_id=current_user.id)
+
+
+    if is_public == 'on':
+        is_public = True
+    else:
+        is_public = False
+
+    new_task = Task(title=title, user_id=current_user.id, is_public=is_public, is_done=False)
 
     user = User.query.filter_by(id=current_user.id).first()
 
@@ -158,11 +180,25 @@ def delete_task():
         db.session.delete(task)
         db.session.commit()
 
+    return redirect(url_for("main.dashboard"))
+
+@main.route("/complete-task", methods=["GET", "POST"])
+@login_required
+def complete_task():
+    task_id = request.args.get("id")
+    csrf_token = request.args.get("csrf_token")
+
+    task = Task.query.filter_by(id=task_id).first()
+    if task:
+        task.is_done = True
+        db.session.commit()
+
+    # Update user done tasks
     user = User.query.filter_by(id=current_user.id).first()
     user.done_tasks = user.done_tasks + 1
     db.session.commit()
 
-    return redirect(url_for("main.dashboard"))
+    return redirect(url_for("main.dashboard"))  
 
 
 @main.route("/upload", methods=["POST"])
@@ -219,22 +255,36 @@ def admin():
 @main.route("/admin/dashboard")
 def adminDashboard():
     users = User.query.all()
+    tasks = Task.query.all()
+    completed_tasks = Task.query.filter_by(is_done=True).count()
     all_users = []
     for user in users:
         all_users.append(user)
 
+
     try:
         admin_session = request.cookies.get("admin_session")
+        if not admin_session:
+            return "<h3>Você não tem a permissão para acessar a administração</h3>", 403
+            
         admin_session = base64_decode(admin_session)
+        
         admin_session = json.loads(admin_session)
-        username = admin_session["user"]
+        
+        username = admin_session.get("user")
+        if not username:
+            return "<h3>Você não tem a permissão para acessar a administração</h3>", 403
+            
+        
         admin_user = Admin.query.filter_by(username=username).first()
+        
         if admin_user:
             return render_template(
-                "adminDashboard.html", admin_user=admin_user, users=all_users
+                "adminDashboard.html", admin_user=admin_user, users=all_users, total_tasks=len(tasks), completed_tasks=completed_tasks
             )
-    except:
-        pass
+    except Exception as e:
+        print("Error in admin dashboard:", str(e))
+        return "<h3>Erro ao acessar o painel de administração</h3>", 403
 
     return "<h3>Você não tem a permissão para acessar a administração</h3>", 403
 
@@ -271,21 +321,35 @@ def doLogin():
                 result = "<result><code>%d</code><msg>%s</msg></result>" % (1, username)
             else:
                 admin = Admin.query.filter_by(username=username).first()
-                if not admin and not check_password_hash(admin.password, password):
-                    result = "<result><code>%d</code><msg>%s</msg></result>" % (
-                        2,
-                        username,
-                    )
+                if admin and check_password_hash(admin.password, password):
+                    admin_session = {
+                        "trackingId": f"{generate_key()}",
+                        "user": f"{username}",
+                    }
 
-                admin_session = {
-                    "trackingId": f"{generate_key()}",
-                    "user": f"{username}",
-                }
-
-                admin_session = json.dumps(admin_session)
-                resp = redirect(url_for("main.message"))
-                resp.set_cookie("admin_session", base64_encode(admin_session))
-                return resp
+                    admin_session = json.dumps(admin_session)
+                    encoded_session = base64_encode(admin_session)
+                    if isinstance(encoded_session, bytes):
+                        encoded_session = encoded_session.decode('utf-8')
+                    print("Encoded session:", encoded_session)  # Debug print
+                    resp = redirect(url_for("main.message"))
+                    try:
+                        resp.set_cookie(
+                            "admin_session",
+                            encoded_session,
+                            httponly=True,
+                            secure=False,
+                            samesite='Lax',
+                            max_age=3600  # Cookie válido por 1 hora
+                        )
+                        print("Cookie set successfully")  # Debug print
+                    except Exception as e:
+                        print("Error setting cookie:", str(e))  # Debug print
+                        return "<h2>Erro ao definir cookie</h2>", 500
+                    
+                    return resp, 302, {"Content-Type": "text/html;charset=UTF-8"}
+                else:
+                    result = "<result><code>%d</code><msg>%s</msg></result>" % (2, username)
 
         except Exception as e:
             result = "<result><code>%d</code><msg>%s</msg></result>" % (3, username)
@@ -348,7 +412,7 @@ def doRegisterAdmin():
                     new_admin = Admin(
                         email=email,
                         username=username,
-                        password=generate_password_hash(password, method="sha256"),
+                        password=generate_password_hash(password, method="scrypt"),
                     )
                     db.session.add(new_admin)
                     db.session.commit()
@@ -383,7 +447,7 @@ def doRegisterAdmin():
                     new_admin = Admin(
                         email=email,
                         username=username,
-                        password=generate_password_hash(password, method="sha256"),
+                        password=generate_password_hash(password, method="scrypt"),
                     )
                     db.session.add(new_admin)
                     db.session.commit()

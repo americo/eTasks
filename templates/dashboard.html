@@ -1,151 +1,172 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>eTasks - Painel</title>
-    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700" rel="stylesheet">
-    <!-- Bulma Version 0.9.0-->
-    <link rel="stylesheet" href="https://unpkg.com/bulma@0.9.0/css/bulma.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" type="text/css" href="../static/css/main.css">
 </head>
 
 <body>
-
-    <!-- START NAV -->
-    <nav class="navbar is-white">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
         <div class="container">
-            <div class="navbar-brand">
-                <a class="navbar-item brand-text" href="/dashboard">
-          <b>eTasks</b>
-        </a>
-                <div class="navbar-burger burger" data-target="navMenu">
-                    <span></span>
-                    <span></span>
-                    <span></span>
-                </div>
-            </div>
-            <div id="navMenu" class="navbar-menu">
-                <div class="navbar-start">
-                    <a class="navbar-item" href="/dashboard">
-            Home
-          </a>
-                    <a class="navbar-item" href="/profile">
-            Perfil
-          </a>
-                    <a class="navbar-item" href="/logout">
-            Sair
-          </a>
-                </div>
-
+            <a class="navbar-brand" href="/dashboard">
+                <i class="fas fa-tasks me-2"></i>
+                <b>eTasks</b>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/dashboard">
+                            <i class="fas fa-home me-1"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/public-tasks">
+                            <i class="fas fa-globe me-1"></i> Tarefas Públicas
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/profile">
+                            <i class="fas fa-user me-1"></i> Perfil
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/logout">
+                            <i class="fas fa-sign-out-alt me-1"></i> Sair
+                        </a>
+                    </li>
+                </ul>
             </div>
         </div>
     </nav>
-    <!-- END NAV -->
-    <div class="container">
-        <div class="columns">
-            <div class="column   is-12 ">
-                <section class="hero is-success welcome is-small">
-                    <div class="hero-body">
-                        <div class="container">
-                            <h1 class="title">
-                                Olá, {{ current_user.name }}.
-                            </h1>
-                            <h2 class="subtitle">
-                                Gerencie suas tarefas facilmente neste painel.
-                            </h2>
-                        </div>
-                    </div>
-                </section>
-                <section class="info-tiles">
-                    <div class="tile is-ancestor has-text-centered">
-                        <div class="tile is-parent">
-                            <article class="tile is-child box">
-                                <p class="title">{{ total_tasks }}</p>
-                                <p class="subtitle">Total</p>
-                            </article>
-                        </div>
-                        <div class="tile is-parent">
-                            <article class="tile is-child box">
-                                <p class="title">{{ current_user.done_tasks }}</p>
-                                <p class="subtitle">Concluídas</p>
-                            </article>
-                        </div>
-                    </div>
-                </section>
-                <div class="columns">
 
-                    <div class="column is-6">
-                        <div class="card">
-                            <header class="card-header">
-                                <p class="card-header-title">
-                                    Adicionar tarefa
-                                </p>
-                                <a href="#" class="card-header-icon" aria-label="more options">
-                                <span class="icon">
-                                    <i class="fa fa-angle-down" aria-hidden="true"></i>
-                                </span>
-                                </a>
-                            </header>
-                            <div class="card-content">
-                                <div class="content">
-                                    <div class="control has-icons-left has-icons-right">
-                                        <form method="POST" action="/add-task" class="block">
-                                            <input type="hidden" name="csrf_token" value={{ current_user.csrf_token }}>
-                                            <input class="input is-medium block" name="title" type="text" placeholder="">
-                                        <span class="icon is-medium is-left">
-                                            <i class="fa fa-tasks"></i>
-                                        </span>
-                                            <input class="button is-success is-medium is-fullwidth block" type="submit" value="Salvar">
-                                        </form>
+    <div class="container py-4">
+        <!-- Welcome Section -->
+        <div class="profile-header mb-4 animate-fade-in">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-6 mb-2">Olá, {{ current_user.name }}</h1>
+                    <p class="lead mb-0">Gerencie suas tarefas facilmente neste painel.</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <span class="badge bg-light text-dark">
+                        <i class="fas fa-calendar-check me-1"></i>
+                        {{ current_user.done_tasks }} tarefas concluídas
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="stat-card animate-fade-in">
+                    <i class="fas fa-list-check fa-2x mb-3 text-primary"></i>
+                    <div class="number">{{ total_tasks }}</div>
+                    <div class="text-muted">Total de Tarefas</div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="stat-card animate-fade-in">
+                    <i class="fas fa-check-circle fa-2x mb-3 text-success"></i>
+                    <div class="number">{{ current_user.done_tasks }}</div>
+                    <div class="text-muted">Tarefas Concluídas</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Add Task Card -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100 animate-fade-in">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-plus-circle me-2 text-primary"></i>
+                            Adicionar Tarefa
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="/add-task">
+                            <input type="hidden" name="csrf_token" value={{ current_user.csrf_token }}>
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light">
+                                        <i class="fas fa-tasks"></i>
+                                    </span>
+                                    <input type="text" class="form-control" name="title"
+                                        placeholder="Digite sua tarefa...">
+                                </div>
+                            </div>
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" name="is_public" id="isPublic" checked>
+                                <label class="form-check-label" for="isPublic">
+                                    <i class="fas fa-globe me-1"></i> Tarefa Pública
+                                </label>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-save me-2"></i> Salvar Tarefa
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tasks List Card -->
+            <div class="col-lg-6 mb-4">
+                <div class="card h-100 animate-fade-in">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-list me-2 text-primary"></i>
+                            Minhas Tarefas
+                        </h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush">
+                            {% for task in tasks %}
+                            {% if not task.is_done %}
+                            <div class="list-group-item task-card">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <i class="fas fa-thumbtack text-primary me-2"></i>
+                                        {{ task.title }}
+                                    </div>
+                                    <div class="btn-group">
+                                        <a href={{ url_for('main.complete_task', id=task.id,
+                                            csrf_token=current_user.csrf_token) }} class="btn btn-sm btn-success">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                        <a href={{ url_for('main.delete_task', id=task.id,
+                                            csrf_token=current_user.csrf_token) }} class="btn btn-sm btn-danger">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
+                            {% endfor %}
                         </div>
                     </div>
-
-                    <div class="column is-6">
-                        <div class="card events-card">
-                            <header class="card-header">
-                                <p class="card-header-title">
-                                    Tarefas
-                                </p>
-                                <a href="#" class="card-header-icon" aria-label="more options">
-                  <span class="icon">
-                    <i class="fa fa-angle-down" aria-hidden="true"></i>
-                  </span>
-                </a>
-                            </header>
-                            <div class="card-table">
-                                <div class="content">
-                                    <table class="table is-fullwidth is-striped">
-                                        <tbody>
-                                            {% for task in tasks %}
-                                            <tr>
-                                                <td width="5%"><i class="fa fa-thumb-tack"></i></td>
-                                                <td>{{ task.title }}</td>
-                                                <td class="level-right">
-                                                    <a class="button is-small is-success" href={{ url_for('main.delete_task', id = task.id, csrf_token=current_user.csrf_token) }}>Concluir</a>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <footer class="card-footer">
-                                <a href="#" class="card-footer-item">Ver tudo</a>
-                            </footer>
-                        </div>
-                    </div>
+                    <div class="card-footer bg-white">
+                        <a href="#" class="btn btn-link text-primary w-100">
+                            <i class="fas fa-eye me-2"></i> Ver todas as tarefas
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

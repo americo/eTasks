@@ -32,3 +32,7 @@ class Task(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer)
     title = db.Column(db.String(1000))
+    is_public = db.Column(db.Boolean)
+    is_done = db.Column(db.Boolean)
+    created_at = db.Column(db.DateTime)
+    updated_at = db.Column(db.DateTime)

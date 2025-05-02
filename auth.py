@@ -1,4 +1,3 @@
-from crypt import methods
 import email
 from flask import (
     Blueprint,
@@ -108,7 +107,7 @@ def resetPassword_post():
         return render_template("reset-password", reset_failed=True)
 
     user = User.query.filter_by(email=email).first()
-    user.password = generate_password_hash(newpassword, method="sha256")
+    user.password = generate_password_hash(newpassword, method="scrypt")
     user.reset_token = generate_key()
     db.session.commit()
 
@@ -139,7 +138,7 @@ def register_post():
     new_user = User(
         email=email,
         name=name,
-        password=generate_password_hash(password, method="sha256"),
+        password=generate_password_hash(password, method="scrypt"),
         otp_code=0000,
         reset_token=generate_key(),
         done_tasks=0,
@@ -150,9 +149,6 @@ def register_post():
     db.session.add(new_user)
     db.session.commit()
 
-    if user:
-        flash("Email address already exists")
-        return redirect(url_for("auth.register"))
 
     return redirect(url_for("auth.login"))
 
